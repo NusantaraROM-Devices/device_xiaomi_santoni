@@ -24,4 +24,5 @@
 
     <!-- Whether to display touch sensitivity switch -->
     <bool name="config_show_touch_sensitivity">true</bool>
+
 </resources>
