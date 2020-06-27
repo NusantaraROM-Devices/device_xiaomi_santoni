@@ -19,19 +19,25 @@ package com.xiaomi.addon;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
-
+import android.os.SELinux;
 import androidx.preference.PreferenceFragment;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceCategory;
+import android.content.Context;
+import android.util.Log;
 
 import com.xiaomi.addon.kcal.KCalSettingsActivity;
 import com.xiaomi.addon.preferences.CustomSeekBarPreference;
 import com.xiaomi.addon.preferences.SecureSettingListPreference;
 import com.xiaomi.addon.preferences.SecureSettingSwitchPreference;
 import com.xiaomi.addon.preferences.VibratorStrengthPreference;
+import com.xiaomi.addon.SuShell;
+import com.xiaomi.addon.SuTask;
 
 public class DeviceSettings extends PreferenceFragment implements
         Preference.OnPreferenceChangeListener {
+    
+	private static final String TAG = "XiaomiAddon";
 
     public static final String KEY_VIBSTRENGTH = "vib_strength";
     public static final String CATEGORY_DISPLAY = "display";
@@ -44,6 +50,10 @@ public class DeviceSettings extends PreferenceFragment implements
     public static final String CATEGORY_FASTCHARGE = "usb_fastcharge";
     public static final String PREF_USB_FASTCHARGE = "fastcharge";
     public static final String USB_FASTCHARGE_PATH = "/sys/kernel/fast_charge/force_fast_charge";
+	
+    private static final String SELINUX_CATEGORY = "selinux";
+    private static final String PREF_SELINUX_MODE = "selinux_mode";
+    private static final String PREF_SELINUX_PERSISTENCE = "selinux_persistence";
 
     private VibratorStrengthPreference mVibratorStrength;
     private Preference mKcal;
@@ -53,6 +63,9 @@ public class DeviceSettings extends PreferenceFragment implements
     private CustomSeekBarPreference mEarpieceGain;
     private SecureSettingSwitchPreference mFastcharge;
     private SecureSettingSwitchPreference mBacklightDimmer;
+	
+    private SwitchPreference mSelinuxMode;
+    private SwitchPreference mSelinuxPersistence;
 
     @Override
     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -80,7 +93,20 @@ public class DeviceSettings extends PreferenceFragment implements
         if (mVibratorStrength != null) {
             mVibratorStrength.setEnabled(VibratorStrengthPreference.isSupported());
         }
-	}
+
+        // SELinux
+        Preference selinuxCategory = findPreference(SELINUX_CATEGORY);
+        mSelinuxMode = (SwitchPreference) findPreference(PREF_SELINUX_MODE);
+        mSelinuxMode.setChecked(SELinux.isSELinuxEnforced());
+        mSelinuxMode.setOnPreferenceChangeListener(this);
+
+        mSelinuxPersistence =
+        (SwitchPreference) findPreference(PREF_SELINUX_PERSISTENCE);
+        mSelinuxPersistence.setOnPreferenceChangeListener(this);
+        mSelinuxPersistence.setChecked(getContext()
+        .getSharedPreferences("selinux_pref", Context.MODE_PRIVATE)
+        .contains(PREF_SELINUX_MODE));
+    }
 
     @Override
     public boolean onPreferenceChange(Preference preference, Object value) {
@@ -92,6 +118,19 @@ public class DeviceSettings extends PreferenceFragment implements
                 mSPECTRUM.setSummary(mSPECTRUM.getEntry());
                 FileUtils.setStringProp(SPECTRUM_SYSTEM_PROPERTY, (String) value);
                 break;
+				
+            case PREF_SELINUX_MODE:
+                if (preference == mSelinuxMode) {
+		              boolean enabled = (Boolean) value;
+                  new SwitchSelinuxTask(getActivity()).execute(enabled);
+                  setSelinuxEnabled(enabled, mSelinuxPersistence.isChecked());
+                  return true;
+                } else if (preference == mSelinuxPersistence) {
+                  setSelinuxEnabled(mSelinuxMode.isChecked(), (Boolean) value);
+                  return true;
+                }
+
+                break;
 
             case PREF_USB_FASTCHARGE:
                 FileUtils.setValue(USB_FASTCHARGE_PATH, (boolean) value);
@@ -102,6 +141,45 @@ public class DeviceSettings extends PreferenceFragment implements
         }
         return true;
     }
+
+	private void setSelinuxEnabled(boolean status, boolean persistent) {
+	  SharedPreferences.Editor editor = getContext()
+		  .getSharedPreferences("selinux_pref", Context.MODE_PRIVATE).edit();
+	  if (persistent) {
+		editor.putBoolean(PREF_SELINUX_MODE, status);
+	  } else {
+		editor.remove(PREF_SELINUX_MODE);
+	  }
+	  editor.apply();
+	  mSelinuxMode.setChecked(status);
+	}
+
+	private class SwitchSelinuxTask extends SuTask<Boolean> {
+	  public SwitchSelinuxTask(Context context) {
+		super(context);
+	  }
+	  @Override
+	  protected void sudoInBackground(Boolean... params) throws SuShell.SuDeniedException {
+		if (params.length != 1) {
+		  Log.e(TAG, "SwitchSelinuxTask: invalid params count");
+		  return;
+		}
+		if (params[0]) {
+		  SuShell.runWithSuCheck("setenforce 1");
+		} else {
+		  SuShell.runWithSuCheck("setenforce 0");
+		}
+	  }
+
+	  @Override
+	  protected void onPostExecute(Boolean result) {
+		super.onPostExecute(result);
+		if (!result) {
+		  // Did not work, so restore actual value
+		  setSelinuxEnabled(SELinux.isSELinuxEnforced(), mSelinuxPersistence.isChecked());
+		}
+	  }
+	}
 
     private boolean isAppNotInstalled(String uri) {
         PackageManager packageManager = getContext().getPackageManager();
