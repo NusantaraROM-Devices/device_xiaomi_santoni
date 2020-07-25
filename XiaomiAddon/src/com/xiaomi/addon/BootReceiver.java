@@ -20,6 +20,8 @@ import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import androidx.preference.PreferenceManager;
 import android.provider.Settings;
 import com.xiaomi.addon.preferences.VibratorStrengthPreference;
 import android.os.SELinux;
@@ -95,7 +97,9 @@ public class BootReceiver extends BroadcastReceiver implements Utils {
         }
     }
 
-
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(context);
+		
+        VibratorStrengthPreference.restore(context);
         if (Settings.Secure.getInt(context.getContentResolver(), PREF_ENABLED, 0) == 1) {
             FileUtils.setValue(KCAL_ENABLE, Settings.Secure.getInt(context.getContentResolver(),
                     PREF_ENABLED, 0));
@@ -120,8 +124,7 @@ public class BootReceiver extends BroadcastReceiver implements Utils {
                     PREF_CONTRAST, CONTRAST_DEFAULT) + CONTRAST_OFFSET);
             FileUtils.setValue(KCAL_HUE, Settings.Secure.getInt(context.getContentResolver(),
                     PREF_HUE, HUE_DEFAULT));
-        VibratorStrengthPreference.restore(context);
-        }
+         }
 
     }
 	
