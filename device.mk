@@ -184,10 +184,6 @@ PRODUCT_PACKAGES += \
 # Charger
 include $(LOCAL_PATH)/rootdir/charger/charger.mk
 
-# DeviceParts
-PRODUCT_PACKAGES += \
-    DeviceParts
-
 # Display
 PRODUCT_PACKAGES += \
     copybit.msm8937 \
