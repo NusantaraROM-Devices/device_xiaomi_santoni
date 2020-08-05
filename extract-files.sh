@@ -32,9 +32,9 @@ VENDOR=xiaomi
 MY_DIR="${BASH_SOURCE%/*}"
 if [[ ! -d "${MY_DIR}" ]]; then MY_DIR="${PWD}"; fi
 
-AICP_ROOT="${MY_DIR}/../../.."
+nad_ROOT="${MY_DIR}/../../.."
 
-HELPER="${AICP_ROOT}/vendor/aicp/build/tools/extract_utils.sh"
+HELPER="${nad_ROOT}/vendor/nad/build/tools/extract_utils.sh"
 if [ ! -f "$HELPER" ]; then
     echo "Unable to find helper script at $HELPER"
     exit 1
@@ -71,7 +71,7 @@ if [ -z "${SRC}" ]; then
 fi
 
 # Initialize the helper
-setup_vendor "${DEVICE}" "${VENDOR}" "${AICP_ROOT}" false "${CLEAN_VENDOR}"
+setup_vendor "${DEVICE}" "${VENDOR}" "${nad_ROOT}" false "${CLEAN_VENDOR}"
 
 extract "${MY_DIR}"/proprietary-files.txt "${SRC}" \
 	"${KANG}" --section "${SECTION}"
@@ -79,7 +79,7 @@ extract "${MY_DIR}"/proprietary-files-qc.txt "$SRC" \
 	"${KANG}" --section "${SECTION}"
 
 # Hax for cam configs
-CAMERA2_SENSOR_MODULES="${AICP_ROOT}"/vendor/"${VENDOR}"/"${DEVICE}"/proprietary/vendor/lib/libmmcamera2_sensor_modules.so
+CAMERA2_SENSOR_MODULES="${nad_ROOT}"/vendor/"${VENDOR}"/"${DEVICE}"/proprietary/vendor/lib/libmmcamera2_sensor_modules.so
 sed -i "s|/system/etc/camera/|/vendor/etc/camera/|g" "${CAMERA2_SENSOR_MODULES}"
 
 "${MY_DIR}"/setup-makefiles.sh
