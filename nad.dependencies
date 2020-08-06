@@ -8,7 +8,7 @@
   {
     "remote": "github",
     "repository": "zhantech/clang-11.0.3",
-    "target_path": "prebuilts/clang/host/linux-x86/clang-11.0.3",
+    "target_path": "prebuilts/clang/host/linux-x86/clang-r383902c",
     "branch": "10.0"
   },
   {
