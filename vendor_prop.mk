@@ -123,6 +123,10 @@ debug.hwui.use_buffer_age=false \
 vendor.video.disable.ubwc=1 \
 debug.sdm.support_writeback=0
 
+# Dolby
+vendor.audio.dolby.ds2.enabled=true
+
+
 # DRM
 PRODUCT_PROPERTY_OVERRIDES += \
 drm.service.enabled=true
