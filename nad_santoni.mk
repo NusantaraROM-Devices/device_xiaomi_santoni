@@ -25,6 +25,9 @@ $(call inherit-product, device/xiaomi/santoni/device.mk)
 # Inherit some common NAD stuff
 $(call inherit-product, vendor/nusantara/config/common_full_phone.mk)
 
+# Include Nusantara Parts
+$(call inherit-product, packages/apps/NusantaraParts/nadproject.mk)
+
 # OFFICIAL TAG
 NAD_BUILD_TYPE := OFFICIAL
 
